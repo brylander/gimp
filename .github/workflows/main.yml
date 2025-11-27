@@ -29,29 +29,44 @@ jobs:
             libjpeg-dev \
             libpng-dev \
             libtiff-dev \
-            libgegl-dev \
-            libbabl-dev \
             liblcms2-dev \
             libwebp-dev \
             libgexiv2-dev \
-            libmypaint-dev \
             libjson-glib-dev \
             libgirepository1.0-dev \
             libxpm-dev \
             libgdk-pixbuf2.0-dev \
             libcurl4-gnutls-dev \
+            libmypaint-dev \
             python3 \
             python3-pip \
             lcov \
-            gcovr
+            gcovr \
+            git
 
-      - name: Configure (Meson) with coverage enabled
+      - name: Build and install babl (new enough for GIMP)
+        run: |
+          git clone https://gitlab.gnome.org/GNOME/babl.git
+          cd babl
+          meson setup _build --prefix=/usr
+          ninja -C _build
+          sudo ninja -C _build install
+
+      - name: Build and install gegl (depends on babl)
+        run: |
+          git clone https://gitlab.gnome.org/GNOME/gegl.git
+          cd gegl
+          meson setup _build --prefix=/usr
+          ninja -C _build
+          sudo ninja -C _build install
+
+      - name: Configure GIMP (Meson) with coverage enabled
         run: |
           meson setup build \
             --buildtype=debug \
             -Db_coverage=true
 
-      - name: Build
+      - name: Build GIMP
         run: |
           meson compile -C build
 
@@ -61,6 +76,7 @@ jobs:
 
       - name: Generate coverage report (gcovr, SonarQube format)
         run: |
+          # Look for gcov data in build/ and map back to sources
           gcovr \
             --sonarqube \
             --root . \
