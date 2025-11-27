@@ -1,0 +1,70 @@
+name: GIMP tests & SonarCloud
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  build-and-analyze:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install build dependencies (minimal example)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            meson \
+            ninja-build \
+            pkg-config \
+            libgtk-3-dev \
+            libjpeg-dev \
+            libpng-dev \
+            libtiff-dev \
+            libgegl-0.4-dev \
+            libbabl-0.1-dev \
+            liblcms2-dev \
+            libwebp-dev \
+            libgexiv2-dev \
+            libmypaint-dev \
+            python3 \
+            python3-pip \
+            lcov \
+            gcovr
+
+      - name: Configure (Meson) with coverage enabled
+        run: |
+          meson setup build \
+            --buildtype=debug \
+            -Db_coverage=true
+
+      - name: Build
+        run: |
+          meson compile -C build
+
+      - name: Run tests
+        run: |
+          meson test -C build --print-errorlogs
+
+      - name: Generate coverage report (gcovr, SonarQube format)
+        run: |
+          # gcovr will look at *.gcno/gcda in the build dir and map back to sources
+          gcovr \
+            --sonarqube \
+            --root . \
+            --xml-pretty \
+            -o coverage.xml
+          ls -l coverage.xml
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
