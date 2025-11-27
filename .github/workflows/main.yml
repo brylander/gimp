@@ -29,8 +29,8 @@ jobs:
             libjpeg-dev \
             libpng-dev \
             libtiff-dev \
-            libgegl-0.4-dev \
-            libbabl-0.1-dev \
+            libgegl-dev \
+            libbabl-dev \
             liblcms2-dev \
             libwebp-dev \
             libgexiv2-dev \
